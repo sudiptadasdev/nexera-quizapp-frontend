@@ -7,7 +7,7 @@ const EditProfile = () => {
   const [bioInput, setBioInput] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Load user details when component loads
+  // Load user details when component mounts
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -26,9 +26,15 @@ const EditProfile = () => {
     };
 
     fetchUserData();
+
+    
+    return () => {
+      setNameInput("");
+      setBioInput("");
+    };
   }, []);
 
-  // Trigger profile update
+  // Submit profile changes
   const submitChanges = async () => {
     if (!nameInput.trim()) {
       alert("Name is required.");
@@ -43,7 +49,7 @@ const EditProfile = () => {
         about: bioInput,
       };
 
-      await fetch("http://localhost:8000/user/profile", {
+      const res = await fetch("http://localhost:8000/user/profile", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -51,6 +57,10 @@ const EditProfile = () => {
         },
         body: JSON.stringify(payload),
       });
+
+      if (!res.ok) {
+        throw new Error("Failed to update profile");
+      }
 
       alert("Your profile was updated.");
       navigate("/profile/view");

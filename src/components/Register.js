@@ -19,19 +19,16 @@ function RegistrationForm({ darkMode }) {
       return false;
     }
 
-    // Email format
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailPattern.test(userEmail)) {
-      setFormError("Please enter a valid email address.");
+      setFormError("Please enter a valid email address format.");
       return false;
     }
 
-    // Password: minimum 8 chars, one letter, one number, one special char
-    const passwordPattern = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-    if (!passwordPattern.test(userPassword)) {
-      setFormError("Password must be at least 8 characters long and include a letter, a number, and a special character.");
-      return false;
-    }
+    if (userPassword.length < 8) {
+  setFormError("Password must be at least 8 characters long.");
+  return false;
+}
 
     return true;
   };
@@ -55,20 +52,27 @@ function RegistrationForm({ darkMode }) {
         setFormError(response.data.detail || "Registration failed.");
       }
     } catch (err) {
-      console.error("Signup error:", err);
-      if (err.response?.data?.detail) {
-        setFormError(err.response.data.detail);
-      } else {
-        setFormError("Something went wrong. Please try again.");
-      }
+  console.error("Signup error:", err);
+
+  // Check for specific backend error messages
+  if (err.response?.status === 400 && err.response?.data?.detail) {
+    if (err.response.data.detail === "Email already registered.") {
+      setFormError("This email is already registered. Try logging in instead.");
+    } else {
+      setFormError(err.response.data.detail); // Catch any other 400 errors
     }
+  } else if (err.response?.status === 422 && Array.isArray(err.response?.data?.detail)) {
+    const msg = err.response.data.detail[0]?.msg || "Invalid input.";
+    setFormError(msg);
+  } else {
+    setFormError("Something went wrong. Please try again.");
+  }
+}
+
   };
 
   return (
-    <div
-      className={`card ${darkMode ? "bg-secondary text-light" : "bg-white text-dark"} mx-auto`}
-      style={{ maxWidth: '420px' }}
-    >
+    <div className={`card ${darkMode ? "bg-secondary text-light" : "bg-white text-dark"} mx-auto`} style={{ maxWidth: '420px' }}>
       <div className="card-body">
         <h3 className="card-title mb-4 text-center">Create Account</h3>
 
@@ -107,8 +111,9 @@ function RegistrationForm({ darkMode }) {
               required
             />
             <small className="text-muted">
-              Must be 8+ characters, with letters, numbers & special characters.
+              Password must be at least 8 characters long.
             </small>
+
           </div>
 
           <button type="submit" className="btn btn-success w-100">
@@ -118,11 +123,7 @@ function RegistrationForm({ darkMode }) {
 
         <p className="mt-3 text-center">
           Already have an account?{" "}
-          <span
-            className="text-primary"
-            style={{ cursor: 'pointer' }}
-            onClick={() => navigate('/login')}
-          >
+          <span className="text-primary" style={{ cursor: 'pointer' }} onClick={() => navigate('/login')}>
             Log in
           </span>
         </p>

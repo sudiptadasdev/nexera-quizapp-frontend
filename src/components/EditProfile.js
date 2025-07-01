@@ -6,75 +6,67 @@ const EditProfile = () => {
   const [nameInput, setNameInput] = useState("");
   const [bioInput, setBioInput] = useState("");
   const [isUpdating, setIsUpdating] = useState(false);
+  const [formError, setFormError] = useState("");
 
-  // Load user details when component mounts
+  
   useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:8000/user/profile", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        const userData = await res.json();
-        setNameInput(userData.full_name || "");
-        setBioInput(userData.about || "");
-      } catch (err) {
-        console.error("Could not load profile info:", err);
-      }
-    };
-
-    fetchUserData();
-
-    
-    return () => {
-      setNameInput("");
-      setBioInput("");
-    };
+    setNameInput("");
+    setBioInput("");
+    setFormError("");
   }, []);
 
-  // Submit profile changes
-  const submitChanges = async () => {
-    if (!nameInput.trim()) {
-      alert("Name is required.");
-      return;
-    }
+const submitChanges = async () => {
+  setFormError("");
 
+  if (!bioInput.trim()) {
+    setFormError("About section is required.");
+    return;
+  }
+
+  try {
     setIsUpdating(true);
-    try {
-      const token = localStorage.getItem("token");
-      const payload = {
-        full_name: nameInput,
-        about: bioInput,
-      };
+    const token = localStorage.getItem("token");
 
-      const res = await fetch("http://localhost:8000/user/profile", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to update profile");
-      }
-
-      alert("Your profile was updated.");
-      navigate("/profile/view");
-    } catch (err) {
-      console.error("Profile update failed:", err);
-      alert("Failed to save changes.");
-    } finally {
-      setIsUpdating(false);
+    const payload = { about: bioInput.trim() };
+    if (nameInput.trim()) {
+      payload.full_name = nameInput.trim();
     }
-  };
+
+    const res = await fetch("http://localhost:8000/user/profile", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    
+    if (res.ok) {
+      navigate("/profile/view");
+    } else {
+      let errorMsg = "Failed to update profile.";
+      try {
+        const data = await res.json();
+        if (data?.detail) {
+          errorMsg = data.detail;
+        }
+      } catch (_) {
+        // silent fail
+      }
+      setFormError(errorMsg);
+    }
+  } catch (err) {
+    console.error("Profile update failed:", err);
+    setFormError("An error occurred while updating.");
+  } finally {
+    setIsUpdating(false);
+  }
+};
 
   return (
     <div>
-      <h2>Profile Settings</h2>
+      <h4 className="mb-4">Edit Your Information</h4>
 
       <label>Full Name</label>
       <input
@@ -82,20 +74,25 @@ const EditProfile = () => {
         className="form-control mb-2"
         value={nameInput}
         onChange={(e) => setNameInput(e.target.value)}
-        placeholder="Your name here"
+        placeholder="Enter your full name"
       />
 
-      <label>About You</label>
+      <label>
+        About You <span className="text-danger">*</span>
+      </label>
       <textarea
-        className="form-control mb-3"
+        className="form-control"
         rows={3}
         value={bioInput}
         onChange={(e) => setBioInput(e.target.value)}
         placeholder="Write something about yourself"
       />
+      {formError && (
+        <small className="text-danger d-block mt-1">{formError}</small>
+      )}
 
       <button
-        className="btn btn-success"
+        className="btn btn-success mt-3"
         onClick={submitChanges}
         disabled={isUpdating}
       >

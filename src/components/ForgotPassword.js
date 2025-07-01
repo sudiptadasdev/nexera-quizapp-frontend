@@ -1,14 +1,21 @@
 import React, { useState } from 'react';
+import API from '../api/api';
 
 function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Optionally: Call backend here
-    console.log("Requesting password reset for:", email);
-    setSubmitted(true);
+    setError('');
+    try {
+      await API.post('/forgot-password', { email });
+      setSubmitted(true);
+    } catch (err) {
+      console.error('Password reset request failed:', err);
+      setError('Failed to send reset email. Please try again.');
+    }
   };
 
   return (
@@ -17,7 +24,7 @@ function ForgotPassword() {
         <h3 className="card-title mb-4">Forgot Password</h3>
         {submitted ? (
           <div className="alert alert-success">
-            If the email exists, a reset link has been sent.
+            A reset link has been sent to your email.
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
@@ -31,6 +38,7 @@ function ForgotPassword() {
                 required
               />
             </div>
+            {error && <div className="alert alert-danger">{error}</div>}
             <button type="submit" className="btn btn-primary w-100">Send Reset Link</button>
           </form>
         )}

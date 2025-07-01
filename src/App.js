@@ -13,6 +13,7 @@ import SessionWatcher from './components/SessionWatcher';
 import ViewProfile from './components/ViewProfile';
 import EditProfile from './components/EditProfile';
 import ForgotPassword from './components/ForgotPassword';
+import ResetPassword from './components/ResetPassword';
 
 
 function isTokenValid() {
@@ -49,6 +50,7 @@ function AppRoutes() {
           <Route path="/profile/view" element={<PrivateRoute><ViewProfile /></PrivateRoute>} />
           <Route path="/profile/edit" element={<PrivateRoute><EditProfile /></PrivateRoute>} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Register />} />
         </Routes>

@@ -3,14 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 function QuizPage() {
-  const { quizId } = useParams();                          // Extract quizId from route
-  const [quizQuestions, setQuizQuestions] = useState([]);  // Stores fetched quiz questions
-  const [answers, setAnswers] = useState({});              // Stores user's selected answers
-  const [isLoading, setIsLoading] = useState(true);        // UI loading state
-  const [fetchError, setFetchError] = useState(null);      // Error state
+  const { quizId } = useParams();
+  const [quizQuestions, setQuizQuestions] = useState([]);
+  const [answers, setAnswers] = useState({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(null);
+  const [submitting, setSubmitting] = useState(false); // NEW
   const navigate = useNavigate();
 
-  // 🔽 Fetch quiz details on mount
   useEffect(() => {
     const loadQuizData = async () => {
       try {
@@ -33,7 +33,6 @@ function QuizPage() {
     loadQuizData();
   }, [quizId]);
 
-  // 🔄 Update user's answer selection
   const handleAnswerChange = (questionId, selectedAnswer) => {
     setAnswers(prev => ({
       ...prev,
@@ -41,15 +40,15 @@ function QuizPage() {
     }));
   };
 
-  // ✅ Submit user answers
   const handleSubmitQuiz = async () => {
+    setSubmitting(true); // START loading
     try {
       const token = localStorage.getItem('token');
       const payload = {
         quizData: { quiz_id: quizId, questions: quizQuestions },
-        userAnswers: Object.entries(answers).map(([questionId, answer]) => ({
-          id: questionId,
-          answer: answer
+        userAnswers: quizQuestions.map((q) => ({
+          id: q.id,
+          answer: answers[q.id] || "Unanswered"
         }))
       };
 
@@ -59,17 +58,29 @@ function QuizPage() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      // Store result and redirect to results page
       localStorage.setItem('quiz_result', JSON.stringify(response.data));
-      navigate('/results');
+      navigate('/results', { state: { fromSubmit: true } });
     } catch (err) {
       console.error('Submission error:', err);
       alert('Failed to submit answers. Please try again.');
+    } finally {
+      setSubmitting(false); // STOP loading (if not navigating)
     }
   };
 
-  // ⏳ Loading and error states
+  // Show while quiz is loading
   if (isLoading) return <div>Loading quiz...</div>;
+
+  // Show while submitting answers
+  if (submitting) {
+    return (
+      <div style={{ textAlign: "center", marginTop: "4rem" }}>
+        <div className="spinner-border text-primary mb-3" role="status" />
+        <p className="fw-bold fs-5">⏳ Evaluating your answers... please wait.</p>
+      </div>
+    );
+  }
+
   if (fetchError) return <div className="text-danger">{fetchError}</div>;
 
   return (

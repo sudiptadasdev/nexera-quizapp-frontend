@@ -48,7 +48,7 @@ const AppNavbar = () => {
                 to="/upload"
                 style={{ fontFamily: 'Segoe UI, sans-serif', fontWeight: 'bold' }}
               >
-                Generate
+                Generate Quiz
               </Nav.Link>
               <Nav.Link
                 as={Link}

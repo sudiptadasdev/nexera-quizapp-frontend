@@ -14,6 +14,7 @@ import ViewProfile from './components/ViewProfile';
 import EditProfile from './components/EditProfile';
 import ForgotPassword from './components/ForgotPassword';
 
+
 function isTokenValid() {
   const token = localStorage.getItem("token");
   if (!token) return false;
@@ -42,6 +43,7 @@ function AppRoutes() {
           <Route path="/" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/quiz/:quizId" element={<PrivateRoute><QuizPage /></PrivateRoute>} />
           <Route path="/results" element={<PrivateRoute><ResultsPage /></PrivateRoute>} />
+          
           <Route path="/history" element={<PrivateRoute><HistoryPage /></PrivateRoute>} />
           <Route path="/upload" element={<PrivateRoute><FileUpload /></PrivateRoute>} />
           <Route path="/profile/view" element={<PrivateRoute><ViewProfile /></PrivateRoute>} />

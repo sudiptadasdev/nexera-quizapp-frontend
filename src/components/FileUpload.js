@@ -79,7 +79,12 @@ const UploadComponent = () => {
     }
   };
 
-  return (
+  return uploading ? (
+    <div style={{ textAlign: "center", marginTop: "3rem" }}>
+      <div className="spinner-border text-primary mb-3" role="status" />
+      <p className="fw-bold fs-5">⏳ Uploading and generating your quiz... please wait.</p>
+    </div>
+  ) : (
     <div>
       <h3>Select a File to Upload</h3>
       <input
@@ -88,7 +93,7 @@ const UploadComponent = () => {
         accept=".pdf,.doc,.docx"
       />
       <button onClick={FileUpload} disabled={uploading}>
-        {uploading ? "Uploading..." : "Submit"}
+        Submit
       </button>
       {feedbackMsg && (
         <p style={{ color: hasError ? "red" : "green", marginTop: "0.5rem" }}>

@@ -8,26 +8,22 @@ import {
 } from 'recharts';
 
 const Dashboard = ({ darkMode }) => {
-  // ==================== State Variables ====================
-  const [uploadedDocs, setUploadedDocs] = useState([]);             // User's uploaded files
-  const [activeFileId, setActiveFileId] = useState(null);           // Currently selected file
-  const [quizSections, setQuizSections] = useState([]);             // Quiz sections derived from the file
-  const [trendScores, setTrendScores] = useState([]);               // Weekly performance chart
-  const [isLoading, setIsLoading] = useState(false);                // For global loading indicator
-  const [showSuccessToast, setShowSuccessToast] = useState(false);  // For confetti success message
+  const [uploadedDocs, setUploadedDocs] = useState([]);
+  const [activeFileId, setActiveFileId] = useState(null);
+  const [quizSections, setQuizSections] = useState([]);
+  const [trendScores, setTrendScores] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   const navigate = useNavigate();
 
-  // ==================== Load on Mount ====================
   useEffect(() => {
-    // Fetch list of uploaded files
     API.get('user/dashboard/files', {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
     })
       .then(res => setUploadedDocs(res.data))
       .catch(err => console.error('File load error', err));
 
-    // Fetch weekly performance chart data
     API.get('user/dashboard/weekly-scores', {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
     })
@@ -35,9 +31,8 @@ const Dashboard = ({ darkMode }) => {
       .catch(err => console.error('Weekly score fetch failed', err));
   }, []);
 
-  // ==================== Fetch Quiz Sections ====================
   const loadQuizSections = async (fileId) => {
-    setActiveFileId(fileId);  // Update current file selection
+    setActiveFileId(fileId);
     try {
       const res = await API.get(`user/dashboard/files/${fileId}/sections`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
@@ -48,18 +43,19 @@ const Dashboard = ({ darkMode }) => {
     }
   };
 
-  // ==================== Trigger Gemini Quiz Generation ====================
   const generateQuizSection = async () => {
     if (!activeFileId) return;
     setIsLoading(true);
     try {
-      await API.post(`user/dashboard/files/${activeFileId}/generate`, {}, {
+      const res = await API.post(`user/dashboard/files/${activeFileId}/generate`, {}, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
 
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } }); // 🎉
+      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
       setShowSuccessToast(true);
-      await loadQuizSections(activeFileId); // Refresh list
+
+      const newQuiz = res.data;
+      navigate(`/quiz/${newQuiz.quiz_id}`);
     } catch (err) {
       console.error("Quiz generation failed", err);
       alert("Failed to generate quiz. Try again later.");
@@ -68,17 +64,18 @@ const Dashboard = ({ darkMode }) => {
     }
   };
 
-  // ==================== UI ====================
+  // ✅ SHOW SIMPLE MESSAGE DURING GENERATION
+  if (isLoading) {
+    return (
+      <div className={`text-center mt-5 ${darkMode ? 'text-light bg-dark' : 'text-dark bg-light'}`} style={{ padding: '2rem' }}>
+        <div className="spinner-border mb-3" role="status" />
+        <p className="fw-bold fs-5">⏳ Generating your quiz... please wait.</p>
+      </div>
+    );
+  }
+
   return (
     <>
-      {/* Loading overlay */}
-      {isLoading && (
-        <div className={`global-overlay ${darkMode ? "dark" : "light"}`}>
-          <div className="spinner-border" role="status" />
-        </div>
-      )}
-
-      {/* Toast success message */}
       <ToastContainer position="bottom-end" className="p-3">
         <Toast bg="success" show={showSuccessToast} onClose={() => setShowSuccessToast(false)} delay={2000} autohide>
           <Toast.Header>
@@ -88,7 +85,6 @@ const Dashboard = ({ darkMode }) => {
         </Toast>
       </ToastContainer>
 
-      {/* Uploaded Files Section */}
       <div className="mt-4">
         <h2>Your Uploaded Files</h2>
         {uploadedDocs.length === 0 && <p>No uploaded files found.</p>}
@@ -106,7 +102,6 @@ const Dashboard = ({ darkMode }) => {
           ))}
         </div>
 
-        {/* Weekly Score Chart */}
         {trendScores.length > 0 && (
           <div className="mt-5">
             <h3>Weekly Performance Overview</h3>
@@ -122,7 +117,6 @@ const Dashboard = ({ darkMode }) => {
           </div>
         )}
 
-        {/* Quiz Sections */}
         {activeFileId && quizSections.length > 0 && (
           <>
             <h3 className="mt-5">Generated Quiz Sections</h3>
@@ -131,7 +125,6 @@ const Dashboard = ({ darkMode }) => {
                 <tr>
                   <th>Section</th>
                   <th>Question Count</th>
-                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -139,36 +132,11 @@ const Dashboard = ({ darkMode }) => {
                   <tr key={index}>
                     <td>Section {index + 1}</td>
                     <td>{section.questions.length}</td>
-                    <td>
-                      <Button
-                        variant="primary"
-                        onClick={() => {
-                          confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-                          navigate('/quiz', {
-                            state: {
-                              quizData: {
-                                quiz_id: section.quiz_id,
-                                questions: section.questions.map(q => ({
-                                  id: q.id,
-                                  question: q.text,
-                                  options: q.options,
-                                  correct_answer: q.correct_answer,
-                                  explanation: q.explanation
-                                }))
-                              }
-                            }
-                          });
-                        }}
-                      >
-                        Take Quiz
-                      </Button>
-                    </td>
                   </tr>
                 ))}
               </tbody>
             </Table>
 
-            {/* Generate More Button */}
             <Button
               variant={darkMode ? "outline-light" : "outline-primary"}
               className="mt-3"

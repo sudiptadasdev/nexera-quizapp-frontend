@@ -1,34 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Card, Container, Badge } from 'react-bootstrap';
+import { useLocation } from 'react-router-dom';
 
 function ResultsPage() {
-  // 🌐 State variables to hold fetched results, loading and error
+  const location = useLocation();
   const [quizResults, setQuizResults] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [fetchError, setFetchError] = useState('');
 
-  // 🔁 Fetch results on component mount
   useEffect(() => {
-    const loadQuizResults = async () => {
+    const loadResults = async () => {
+      const token = localStorage.getItem("token");
+
       try {
-        const authToken = localStorage.getItem("token");
-        const response = await axios.get("http://localhost:8000/api/answers/attempts", {
-          headers: {
-            Authorization: `Bearer ${authToken}`
-          },
-        });
-        setQuizResults(response.data);
+        console.log("📍 Location state:", location.state);
+
+        if (location.state?.fromSubmit) {
+          // Show only latest result from localStorage
+          const latest = JSON.parse(localStorage.getItem('quiz_result'));
+          console.log("📍 Latest result from localStorage:", latest);
+
+          if (latest && Array.isArray(latest.results)) {
+            setQuizResults(latest.results);  // ✅ Only store the results array
+            console.log("✅ Set quizResults to latest:", latest.results);
+          } else {
+            setFetchError("No latest quiz result found.");
+          }
+        } else {
+          // Full attempt history
+          const response = await axios.get("http://localhost:8000/api/answers/attempts", {
+            headers: {
+              Authorization: `Bearer ${token}`
+            },
+          });
+          console.log("📜 All past attempts received:", response.data);
+          setQuizResults(response.data);
+        }
       } catch (err) {
-        console.error("Error fetching results:", err);
-        setFetchError("Failed to load results.");
+        console.error("❌ Error loading results:", err);
+        setFetchError("Failed to load quiz results.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadQuizResults();
-  }, []);
+    loadResults();
+  }, [location.state]);
 
   if (isLoading) return <p>Loading results...</p>;
   if (fetchError) return <p>{fetchError}</p>;

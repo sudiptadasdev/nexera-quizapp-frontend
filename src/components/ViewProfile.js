@@ -29,7 +29,7 @@ const ViewProfile = () => {
 
   return (
     <div>
-      <h2>View Profile</h2>
+      <h4 className="mb-4">Your Profile Overview</h4>
       <p><strong>Name:</strong> {user.full_name || "N/A"}</p>
       <p><strong>Email:</strong> {user.email}</p>
       <p><strong>About:</strong> {user.about || "N/A"}</p>

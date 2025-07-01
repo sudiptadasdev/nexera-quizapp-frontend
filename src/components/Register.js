@@ -7,35 +7,38 @@ function RegistrationForm({ darkMode }) {
   const [userName, setUserName] = useState('');
   const [userPassword, setUserPassword] = useState('');
   const [formError, setFormError] = useState(null);
+  const [errors, setErrors] = useState({});
 
   const navigate = useNavigate();
 
   const validateForm = () => {
-    const trimmedName = userName.trim();
+    const newErrors = {};
 
-    // Check if name is empty or contains only digits
-    if (!trimmedName || /^\d+$/.test(trimmedName)) {
-      setFormError("Full name must contain letters and cannot be only numbers.");
-      return false;
+    if (!/^(?=.*[a-zA-Z])[a-zA-Z0-9 ]+$/.test(userName.trim())) {
+      newErrors.userName = "Must be Alphabet or Alphanumeric characters .";
     }
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailPattern.test(userEmail)) {
-      setFormError("Please enter a valid email address format.");
-      return false;
+    const acceptedDomains = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'uta.com'];
+    const emailParts = userEmail.split('@');
+    if (
+      emailParts.length !== 2 ||
+      !acceptedDomains.includes(emailParts[1].toLowerCase())
+    ) {
+      newErrors.userEmail = "Enter valid email address.";
     }
 
     if (userPassword.length < 8) {
-  setFormError("Password must be at least 8 characters long.");
-  return false;
-}
+      newErrors.userPassword = "Password must be at least 8 characters.";
+    }
 
-    return true;
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setFormError(null);
+    setErrors({});
 
     if (!validateForm()) return;
 
@@ -52,23 +55,21 @@ function RegistrationForm({ darkMode }) {
         setFormError(response.data.detail || "Registration failed.");
       }
     } catch (err) {
-  console.error("Signup error:", err);
+      console.error("Signup error:", err);
 
-  // Check for specific backend error messages
-  if (err.response?.status === 400 && err.response?.data?.detail) {
-    if (err.response.data.detail === "Email already registered.") {
-      setFormError("This email is already registered. Try logging in instead.");
-    } else {
-      setFormError(err.response.data.detail); // Catch any other 400 errors
+      if (err.response?.status === 400 && err.response?.data?.detail) {
+        if (err.response.data.detail === "Email already registered.") {
+          setFormError("This email is already registered. Try logging in instead.");
+        } else {
+          setFormError(err.response.data.detail);
+        }
+      } else if (err.response?.status === 422 && Array.isArray(err.response?.data?.detail)) {
+        const msg = err.response.data.detail[0]?.msg || "Invalid input.";
+        setFormError(msg);
+      } else {
+        setFormError("Something went wrong. Please try again.");
+      }
     }
-  } else if (err.response?.status === 422 && Array.isArray(err.response?.data?.detail)) {
-    const msg = err.response.data.detail[0]?.msg || "Invalid input.";
-    setFormError(msg);
-  } else {
-    setFormError("Something went wrong. Please try again.");
-  }
-}
-
   };
 
   return (
@@ -88,6 +89,7 @@ function RegistrationForm({ darkMode }) {
               onChange={(e) => setUserName(e.target.value)}
               required
             />
+            {errors.userName && <small className="text-danger d-block">{errors.userName}</small>}
           </div>
 
           <div className="mb-3">
@@ -99,6 +101,7 @@ function RegistrationForm({ darkMode }) {
               onChange={(e) => setUserEmail(e.target.value)}
               required
             />
+            {errors.userEmail && <small className="text-danger d-block">{errors.userEmail}</small>}
           </div>
 
           <div className="mb-3">
@@ -110,10 +113,7 @@ function RegistrationForm({ darkMode }) {
               onChange={(e) => setUserPassword(e.target.value)}
               required
             />
-            <small className="text-muted">
-              Password must be at least 8 characters long.
-            </small>
-
+            {errors.userPassword && <small className="text-danger d-block">{errors.userPassword}</small>}
           </div>
 
           <button type="submit" className="btn btn-success w-100">

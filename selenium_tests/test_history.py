@@ -9,9 +9,10 @@ import time
 with open("selenium_tests/temp_user.txt", "r") as f:
     email, password = f.read().strip().split(",")
 
+# Setup Edge driver
 service = Service("selenium_tests/msedgedriver.exe")
 driver = webdriver.Edge(service=service)
-driver.maximize_window()  # ✅ Expand window to full screen
+driver.maximize_window()
 
 try:
     # Step 1: Login
@@ -22,42 +23,29 @@ try:
     driver.find_element(By.XPATH, "//button[text()='Log In']").click()
     WebDriverWait(driver, 10).until(EC.url_to_be("http://localhost:3000/"))
     print("✅ Logged in")
+    time.sleep(1.5)
 
-    # Step 2: Ensure Dashboard is visible
-    WebDriverWait(driver, 10).until(
-        EC.presence_of_element_located((By.XPATH, "//a[text()='Dashboard']"))
-    )
+    # Step 2: Ensure Dashboard is loaded
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.XPATH, "//a[text()='Dashboard']")))
     print("🏠 Dashboard loaded")
+    time.sleep(1.5)
+
+    # Step 4: Click avatar → Quiz History
+    avatar = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "user-menu")))
+    driver.execute_script("arguments[0].click();", avatar)
     time.sleep(1)
-
-    # Step 3: Open avatar dropdown → click "View Profile"
-    avatar = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "user-menu")))
-    driver.execute_script("arguments[0].click();", avatar)
-    time.sleep(0.5)
-    view_profile = WebDriverWait(driver, 5).until(
-        EC.element_to_be_clickable((By.XPATH, "//a[text()='View Profile']"))
-    )
-    view_profile.click()
-    WebDriverWait(driver, 10).until(EC.url_to_be("http://localhost:3000/profile/view"))
-    print("👁️ View Profile page loaded")
-
-    # Step 4: Again open dropdown → click "Quiz History"
-    avatar = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.ID, "user-menu")))
-    driver.execute_script("arguments[0].click();", avatar)
-    time.sleep(0.5)
-    history_link = WebDriverWait(driver, 5).until(
-        EC.element_to_be_clickable((By.XPATH, "//a[text()='Quiz History']"))
-    )
-    history_link.click()
+    history_link = WebDriverWait(driver, 5).until(EC.element_to_be_clickable((By.XPATH, "//a[text()='Quiz History']")))
+    driver.execute_script("arguments[0].click();", history_link)
     WebDriverWait(driver, 10).until(EC.url_to_be("http://localhost:3000/history"))
     print("📜 Quiz History page loaded")
+    time.sleep(2)
 
     # Step 5: Verify content
     page_text = driver.find_element(By.TAG_NAME, "body").text.lower()
     if "quiz" in page_text and ("attempt" in page_text or "score" in page_text):
         print("✅ History content confirmed")
     else:
-        print("⚠️ History loaded but content not detected")
+        print("⚠️ History page loaded but expected content not found")
 
 except Exception as e:
     print("❌ Test failed:", e)

@@ -19,7 +19,7 @@ try:
     )
 
     rand_num = random.randint(1000, 99999)
-    unique_email = f"john.doe{rand_num}@example.com"
+    unique_email = f"john.doe{rand_num}@hotmail.com"
 
     # Fill registration form
     driver.find_element(By.XPATH, "//label[text()='Full Name']/following-sibling::input").send_keys("John Doe")
@@ -31,15 +31,15 @@ try:
         EC.url_contains("/login")
     )
 
-    print(f"✅ Registration test passed with email: {unique_email}")
+    print(f"Registration test passed with email: {unique_email}")
 
     # Save credentials
     with open("selenium_tests/temp_user.txt", "w") as f:
         f.write(f"{unique_email},MySecurePass123")
 
 except Exception as e:
-    print("❌ Test failed:", e)
+    print("Test failed:", e)
 
 finally:
-    time.sleep(2)
+    time.sleep(5)
     driver.quit()

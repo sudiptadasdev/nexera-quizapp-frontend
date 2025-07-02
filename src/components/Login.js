@@ -1,4 +1,3 @@
-// src/components/UserLogin.js
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../api/api';
@@ -7,11 +6,13 @@ function UserLogin({ darkMode }) {
   const [userEmail, setUserEmail] = useState('');
   const [userPassword, setUserPassword] = useState('');
   const [loginError, setLoginError] = useState(null);
+  const [loggingIn, setLoggingIn] = useState(false);
   const navigate = useNavigate();
 
-  // Handle form submission
   const attemptLogin = async (event) => {
     event.preventDefault();
+    setLoginError(null);
+    setLoggingIn(true);
 
     const credentials = new URLSearchParams();
     credentials.append('username', userEmail);
@@ -23,27 +24,29 @@ function UserLogin({ darkMode }) {
       });
 
       const { access_token } = res.data;
-
-      // Store token in local storage
       localStorage.setItem("token", access_token);
-
-      // Navigate to dashboard/home
       navigate("/");
     } catch (error) {
       console.error("Login error:", error);
-      setLoginError("Invalid email or password.");
+      setLoginError("❌ Invalid email or password.");
+    } finally {
+      setLoggingIn(false);
     }
   };
 
   return (
     <div
-      className={`card ${darkMode ? "bg-dark text-light" : "bg-light text-dark"} mx-auto`}
-      style={{ maxWidth: '400px' }}
+      className={`card ${darkMode ? "bg-dark text-light" : "bg-light text-dark"} mx-auto shadow`}
+      style={{ maxWidth: '400px', marginTop: '50px' }}
     >
       <div className="card-body">
-        <h3 className="card-title mb-4">Sign In</h3>
+        <h3 className="card-title mb-4 text-center fw-bold">Sign In</h3>
 
-        {loginError && <div className="alert alert-danger">{loginError}</div>}
+        {loginError && (
+          <div className="alert alert-danger" role="alert">
+            {loginError}
+          </div>
+        )}
 
         <form onSubmit={attemptLogin}>
           <div className="mb-3">
@@ -80,7 +83,13 @@ function UserLogin({ darkMode }) {
             </div>
           </div>
 
-          <button type="submit" className="btn btn-primary w-100">Log In</button>
+          <button
+            type="submit"
+            className="btn btn-primary w-100"
+            disabled={loggingIn}
+          >
+            {loggingIn ? "Logging in..." : "Log In"}
+          </button>
         </form>
       </div>
     </div>
@@ -88,3 +97,4 @@ function UserLogin({ darkMode }) {
 }
 
 export default UserLogin;
+
